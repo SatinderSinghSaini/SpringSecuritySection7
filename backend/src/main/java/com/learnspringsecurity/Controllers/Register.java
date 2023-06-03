@@ -22,25 +22,6 @@ public class Register {
     @Autowired
     private CustomerRepository customerRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody Customer customer){
-        ResponseEntity response = null;
-        try{
-            customer.setPwd(passwordEncoder.encode(customer.getPwd()));
-            customer.setCreateDt(new Date(System.currentTimeMillis()));
-            Customer customerFromDb = customerRepository.save(customer);
-            if(customerFromDb.getId()>0){
-                response = ResponseEntity.status(HttpStatus.CREATED).body("User successfully saved");
-            }
-        }catch (Exception e){
-            response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An exception occurred"+ e.getMessage());
-        }
-        return response;
-    }
-
     @RequestMapping("/user")
     public Customer getCustomerAfterLogin(Authentication authentication){
         List<Customer> customers = customerRepository.findByEmail(authentication.getName());

@@ -7,14 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -22,8 +15,6 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import javax.sql.DataSource;
-import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -34,6 +25,9 @@ public class ProjectSecurityConfig {
 
         CsrfTokenRequestAttributeHandler requestAttributeHandler = new CsrfTokenRequestAttributeHandler();
         requestAttributeHandler.setCsrfRequestAttributeName("_csrf");
+
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(new KeyCloakRoleConverter());
 
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and() //This configuration is required for creating JWT token
                 .cors().configurationSource(new CorsConfigurationSource() {
@@ -50,13 +44,8 @@ public class ProjectSecurityConfig {
                     }
                 }).and()
                 .csrf((csrf)->csrf.csrfTokenRequestHandler(requestAttributeHandler).ignoringRequestMatchers("/contact","/register")
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))//It will generate csrf token
-                        .addFilterBefore(new RequestValidationBeforeFilter(),BasicAuthenticationFilter.class)
-                        .addFilterAt(new AuthenticationLoggingAtFilter(),BasicAuthenticationFilter.class)
-                        .addFilterAfter(new CsrfCookieFilter(),BasicAuthenticationFilter.class)//CsrfCookieFilter will add csrf token to response header after basic authentication completed.
-                        .addFilterAfter(new AuthoritiesLoggingAfterFilter(),BasicAuthenticationFilter.class)
-                        .addFilterAfter(new JWTTokenGeneratorFilter(),BasicAuthenticationFilter.class)
-                        .addFilterBefore(new JWTTokenValidatorFilter(),BasicAuthenticationFilter.class)
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                        .addFilterAfter(new CsrfCookieFilter(),BasicAuthenticationFilter.class)
                 .authorizeHttpRequests()
                 .requestMatchers("/account").hasRole("USER")
                 .requestMatchers("/balance").hasAnyRole("USER","ADMIN")
@@ -64,12 +53,9 @@ public class ProjectSecurityConfig {
                 .requestMatchers("/loans").authenticated()
                 .requestMatchers("/user").authenticated()
                 .requestMatchers("/contact","/notices","/register").permitAll()
-        .and().formLogin()
-        .and().httpBasic();
+        .and().oauth2ResourceServer().jwt().jwtAuthenticationConverter(jwtAuthenticationConverter);//We are telling that our spring project acts aa
+                                                //a resource server and we will use Jwt for authentication
+                                                // and provide jwtAuthentication converter to convert roles to GrantedAuthorities
         return (SecurityFilterChain)http.build();
-    }
-    @Bean
-    PasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder();
     }
 }

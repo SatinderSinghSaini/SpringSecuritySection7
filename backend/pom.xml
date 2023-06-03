@@ -11,8 +11,8 @@
 	<groupId>com.learnspringsecurity</groupId>
 	<artifactId>springsecuritysection5</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>springsecuritysection7</name>
-	<description>Implementing OAuth framework with Spring Security</description>
+	<name>springsecuritysection5</name>
+	<description>Demo project for how to use filters in spring , JWT and method level security</description>
 	<properties>
 		<java.version>17</java.version>
 	</properties>
@@ -20,6 +20,10 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
